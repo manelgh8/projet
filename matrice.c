@@ -1,70 +1,112 @@
-//section include..
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <time.h> 
 
+int n, m, shouldExit = 0;
+int **A, **B, **C;
 
-
-//define
-#define N ... // places dans le buffer
-
-//variable globales 
-//les matrices
-B,C,A
-//le tampon
-T
-
-//pour la synchronisation 
 pthread_mutex_t mutex;
-sem_t empty;
-sem_t full;
+sem_t empty, full;
 
-// Producteur
-void producer(void)
+
+void *prod(void *arg)
 {
-  int item;
-//pour chaque ligne 
-//for....
-  {
-    item=produce(item);
-    sem_wait(&empty); // attente d'une place libre
-    pthread_mutex_lock(&mutex);
-     // section critique
-     insert_item();
-    pthread_mutex_unlock(&mutex);
-    sem_post(&full); // il y a une place remplie en plus
-  }
+    int i = *(int *)arg, item = 0;
+    double extraVal = 0.0;  
+    for (int j = 0; j < m; j++)
+    {
+        item = 0;
+        for (int k = 0; k < m; k++)
+            item += B[i][k] * C[k][j];
+        sem_wait(&empty);
+        pthread_mutex_lock(&mutex);
+        A[i][j] = item;
+        shouldExit = (i == n - 1 && j == m - 1);
+        pthread_mutex_unlock(&mutex);
+        sem_post(&full);
+    }
+    pthread_exit(NULL);
 }
-
-void consumer(void)
+void *cons(void *arg)
 {
- int item;
- while(true)
- {
-   sem_wait(&full); // attente d'une place remplie
-   pthread_mutex_lock(&mutex);
-    // section critique
-    item=remove(item);
-   pthread_mutex_unlock(&mutex);
-   sem_post(&empty); // il y a une place libre en plus
- }
+    while (!shouldExit)
+    {
+        sem_wait(&full);
+        pthread_mutex_lock(&mutex);
+        pthread_mutex_unlock(&mutex);
+        sem_post(&empty);
+    }
+    pthread_exit(NULL);
 }
-
-int Main ()
+int main(int argc, char *argv[])
 {
-// Initialisation
-sem_init(&mutex,0,1);//exclusion mutuelle 
-sem_init(&empty, 0 , N);  // buffer vide
-sem_init(&full, 0 , 0);   // buffer vide
-//creation des threads
+    srand(time(NULL));
+    printf("Enter number of rows and cols in matrix B: ");
+    n = 3;
+    m = 3;
+    if (m != n)
+    {
+        perror("Error: Multiplication of B*C is not possible.\n");
+        exit(EXIT_FAILURE);
+    }
+    B = (int **)malloc(n * sizeof(int *));
+    for (int i = 0; i < n; i++)
+        B[i] = (int *)malloc(m * sizeof(int));
+    C = (int **)malloc(n * sizeof(int *));
+    for (int i = 0; i < n; i++)
+        C[i] = (int *)malloc(m * sizeof(int));
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            B[i][j] = rand() % 10;
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
+            C[i][j] = rand() % 10;
+    printf("\n______  matric B __________\n");
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+            printf("%d  ", B[i][j]);
+        printf("\n");
+    }
+    printf("\n_______ matrice C _______\n");
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+            printf("%d  ", C[i][j]);
+        printf("\n");
+    }
+    printf("\n\n");
 
+    A = (int **)malloc(n * sizeof(int *));
+    for (int i = 0; i < n; i++)
+        A[i] = (int *)malloc(m * sizeof(int));
+    pthread_mutex_init(&mutex, NULL);
+    sem_init(&empty, 0, 1);
+    sem_init(&full, 0, 0);
+    pthread_t prod_t[n], cons_t;
+    for (int i = 0; i < n; i++)
+    {
+        int *idx = malloc(sizeof(int));
+        *idx = i;
+        pthread_create(&prod_t[i], NULL, prod, idx);
+    }
+    pthread_create(&cons_t, NULL, cons, NULL);
+    for (int i = 0; i < n; i++)
+        pthread_join(prod_t[i], NULL);
+    pthread_join(cons_t, NULL);
+    printf("\n========= A ==========\n");
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+            printf("%d  ", A[i][j]);
+        printf("\n");
+    }
+    pthread_mutex_destroy(&mutex);
+    sem_destroy(&empty);
+    sem_destroy(&full);
 
-
-//attente des threads
-
-
-
-
-//destruction...
-
-
-
-return 0;
+    return 0;
 }
