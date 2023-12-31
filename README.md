@@ -1,30 +1,21 @@
-# projet
-projet système d'exploitation
+# TP_SE manel Ghazi
+# Q1: Quelles sont les structures de données à utiliser ?
 
-On veut effectuer en parallèle(En utilisant le modèle producteurs/consommateur) le produit de deux matrices: 
-B (n1* m1)  et C (n2 * m2) ⇒ la matrice résultante A=B*C ;
 
-Les matrices sont remplis par des valeurs aléatoires
+.Matrices B, C et A : Vous avez déclaré des matrices pour stocker les valeurs de B, C et A.
+.Tampon T : Vous avez utilisé une structure T pour le tampon.
 
-Les résultats intermédiaires seront placés dans un tampon de taille “T[N]”.
+# Q2: Comment allez-vous protéger l'accès à ces données?
 
-Chaque threads producteurs calcule une ligne de la matrice résultante A et range les résultat dans le tampon T
+Vous avez utilisé des mécanismes de synchronisation pour protéger l'accès concurrent aux données partagées :
 
-Les threads consommateurs consomment l'élément T[y]  le place dans la matrice résultante A  au bon emplacement!
+Mutex (pthread_mutex_t mutex) : Vous utilisez un mutex pour protéger l'accès au tampon (buffer) et à la matrice résultante (A).
 
-q1: Quelles sont les structures de données à utiliser ?
+Sémaphores (sem_t empty et sem_t full) : Vous utilisez des sémaphores pour contrôler le nombre d'éléments dans le tampon.
+# Q3: Quels sont les risques?
+Condition de course (Race Condition) : Il est crucial de garantir que les threads producteurs et consommateurs accèdent de manière synchronisée au tampon et à la matrice résultante. Sinon, cela peut entraîner des résultats incorrects.
 
-q2: Comment allez-vous protéger l'accès à ces données?
+Blocage (Deadlock) : Assurez-vous d'éviter les situations de blocage en utilisant les sémaphores et les mutex de manière appropriée.
 
-q3- quels sont les risques?
-
-1-Cloner le projet github : projet  ; et le modifier le selon les exigences ci-dessus
-
-2- Pour chaque nouvelle idée créer une nouvelle branche; les autres étudiants peuvent améliorer l'idée en créant une nouvelle branche!
-
-3-Les premières réponses sont mieux notées!
-
-4-Bien gérer les éxceptions 
-
-5-Bien gérer les messages d'erreurs!
+Dépassement de tampon (Buffer Overflow) : Il est important de gérer correctement la taille du tampon (N) pour éviter les dépassements de tampon.
 
